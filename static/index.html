@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartAssist AI — Multi-Agent Productivity System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--card:#111118;--sidebar:#0d0d14;
+  --border:rgba(255,255,255,.07);--hover:rgba(255,255,255,.04);
+  --accent:#5eead4;--accent2:#818cf8;--accent3:#fb7185;
+  --accent4:#fbbf24;--text:#ececf1;--muted:#8e8ea0;--sub:#40404f;
+  --ff:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);display:flex}
+.sidebar{width:260px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0}
+.sb-top{padding:16px 12px}
+.logo{font-family:var(--ff);font-size:16px;font-weight:800;background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;padding:4px 8px;margin-bottom:4px}
+.logo-sub{font-size:11px;color:var(--muted);padding:0 8px 12px;display:block}
+.new-btn{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--fb);font-size:13px;cursor:pointer;transition:all .2s;width:100%}
+.new-btn:hover{background:var(--hover);color:var(--text)}
+.sb-section{padding:8px 12px;flex:1;overflow-y:auto}
+.sb-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--sub);padding:10px 4px 6px;font-weight:500}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer;transition:all .15s;margin-bottom:2px}
+.sb-item:hover{background:var(--hover);color:var(--text)}
+.sb-item.on{background:rgba(94,234,212,.07);color:var(--text)}
+.agent-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:100px;background:rgba(94,234,212,.1);color:var(--accent);border:1px solid rgba(94,234,212,.15)}
+.sb-bottom{padding:12px;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px}
+.uav{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:800;font-size:13px;color:var(--bg);flex-shrink:0}
+.uname{font-size:13px;font-weight:500}
+.urole{font-size:11px;color:var(--muted)}
+.main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
+.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.model-pill{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--hover);font-size:13px;color:var(--text);font-weight:500}
+.live-dot{width:6px;height:6px;background:#28ca41;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.agent-pills{display:flex;gap:6px;margin-left:8px}
+.ap{font-size:11px;padding:4px 10px;border-radius:100px;border:1px solid var(--border);color:var(--muted)}
+.tb-right{margin-left:auto}
+.tb-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--fb);transition:all .2s}
+.tb-btn:hover{background:var(--hover);color:var(--text)}
+.msgs{flex:1;overflow-y:auto;padding:24px 0;display:flex;flex-direction:column;gap:0}
+.msgs::-webkit-scrollbar{width:4px}
+.msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:2px}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px;gap:20px}
+.wlogo{font-family:var(--ff);font-size:42px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite}
+@keyframes gs{0%,100%{background-position:0%}50%{background-position:100%}}
+.wsub{color:var(--muted);font-size:15px;max-width:480px;line-height:1.7;font-weight:300}
+.agents-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.agent-card{padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:var(--hover);text-align:center;min-width:100px}
+.agent-card-ico{font-size:20px;margin-bottom:4px}
+.agent-card-name{font-size:12px;font-weight:500;color:var(--text)}
+.agent-card-role{font-size:11px;color:var(--muted)}
+.wcards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:560px;width:100%;margin-top:8px}
+.wcard{padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--hover);text-align:left;cursor:pointer;transition:all .2s}
+.wcard:hover{border-color:rgba(94,234,212,.25);background:rgba(94,234,212,.04);transform:translateY(-1px)}
+.wcard-ico{font-size:18px;margin-bottom:6px}
+.wcard-t{font-size:13px;font-weight:500;margin-bottom:3px}
+.wcard-s{font-size:12px;color:var(--muted);font-weight:300}
+.msg-row{padding:14px 20px 6px;display:flex;gap:14px;align-items:flex-start;position:relative}
+.msg-row:hover{background:rgba(255,255,255,.012)}
+.msg-row.usr{flex-direction:row-reverse}
+.av{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:800;margin-top:2px}
+.av-ai{background:linear-gradient(135deg,var(--accent),var(--accent2));font-family:var(--ff);color:var(--bg)}
+.av-u{background:rgba(255,255,255,.1);font-size:16px}
+.msg-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.msg-row.usr .msg-body{align-items:flex-end}
+.msg-name{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.agent-tag{font-size:10px;padding:2px 8px;border-radius:100px;background:rgba(94,234,212,.1);color:var(--accent);border:1px solid rgba(94,234,212,.15)}
+.bubble{font-size:14.5px;line-height:1.8;font-weight:300;color:var(--text);max-width:720px}
+.bubble.ubub{background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.15);border-radius:16px;border-top-right-radius:4px;padding:12px 16px}
+.bubble strong{font-weight:600;color:#e2e8f0}
+.bubble code{background:rgba(255,255,255,.08);padding:2px 7px;border-radius:5px;font-family:'Courier New',monospace;font-size:13px;color:#7dd3fc}
+.code-block{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:10px;margin:12px 0;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06)}
+.code-lang{font-size:12px;color:var(--muted);font-family:'Courier New',monospace}
+.code-copy{padding:4px 12px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--fb);transition:all .2s}
+.code-copy:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.code-content{padding:16px;overflow-x:auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.65;color:#e2e8f0;white-space:pre}
+.tool-card{background:rgba(94,234,212,.05);border:1px solid rgba(94,234,212,.15);border-radius:12px;padding:14px 16px;margin:10px 0;font-size:13px}
+.tool-card-title{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tool-card-content{color:var(--text);line-height:1.6}
+.task-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.task-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-pending{background:#fbbf24}
+.status-completed{background:#28ca41}
+.msg-acts{display:flex;gap:4px;opacity:0;transition:opacity .2s;margin-top:4px;padding-bottom:6px}
+.msg-row:hover .msg-acts{opacity:1}
+.act{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11.5px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;font-family:var(--fb)}
+.act:hover{background:var(--hover);color:var(--text)}
+.act.ok{color:#28ca41;border-color:rgba(40,202,65,.3)}
+.typ{display:flex;gap:5px;align-items:center;padding:8px 0}
+.typ span{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:ty 1.3s infinite}
+.typ span:nth-child(2){animation-delay:.2s}.typ span:nth-child(3){animation-delay:.4s}
+@keyframes ty{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}
+.input-area{padding:14px 20px 18px;flex-shrink:0}
+.input-wrap{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;transition:border-color .2s}
+.input-wrap:focus-within{border-color:rgba(94,234,212,.3)}
+.input-top{display:flex;align-items:flex-end;gap:10px;padding:12px 14px}
+textarea{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--fb);font-size:14.5px;outline:none;resize:none;max-height:160px;line-height:1.6}
+textarea::placeholder{color:var(--sub)}
+textarea:disabled{opacity:.5}
+.snd{width:36px;height:36px;background:var(--accent);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;margin-bottom:2px}
+.snd:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(94,234,212,.4)}
+.snd:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.snd svg{width:15px;height:15px;fill:var(--bg)}
+.input-bottom{padding:8px 14px 12px;display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);flex-wrap:wrap}
+.tool-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s;font-family:var(--fb)}
+.tool-btn:hover{background:var(--hover);color:var(--text);border-color:rgba(255,255,255,.15)}
+.inp-hint{margin-left:auto;font-size:11px;color:var(--sub)}
+@media(max-width:768px){.sidebar{display:none}.msgs{padding:16px 0}.input-area{padding:10px 12px 14px}}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sb-top">
+    <span class="logo">SmartAssist AI</span>
+    <span class="logo-sub">Multi-Agent Productivity System</span>
+    <button class="new-btn" onclick="newChat()">+ New Session</button>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Agents</div>
+    <div class="sb-item on">🤖 Primary Agent <span class="agent-badge">Active</span></div>
+    <div class="sb-item" onclick="ask('Show me all my tasks')">📋 Task Agent</div>
+    <div class="sb-item" onclick="ask('Show me all my schedules')">📅 Schedule Agent</div>
+    <div class="sb-item" onclick="ask('Show me all my notes')">📝 Notes Agent</div>
+    <div class="sb-item" onclick="ask('Search for latest AI trends in 2026')">🔍 Research Agent</div>
+    <div class="sb-label">Quick Actions</div>
+    <div class="sb-item" onclick="ask('Add a task to learn Python today with high priority')">➕ Add Task</div>
+    <div class="sb-item" onclick="ask('Schedule a meeting tomorrow at 10am')">📆 Add Schedule</div>
+    <div class="sb-item" onclick="ask('Get weather for Mumbai')">🌤 Weather</div>
+    <div class="sb-item" onclick="ask('Save a note: Important ideas for my project')">💾 Save Note</div>
+  </div>
+  <div class="sb-bottom">
+    <div class="user-row">
+      <div class="uav">A</div>
+      <div>
+        <div class="uname">Anish Mahna</div>
+        <div class="urole">Creator · SmartAssist AI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="model-pill"><div class="live-dot"></div>SmartAssist AI · Live</div>
+    <div class="agent-pills">
+      <div class="ap">📋 Tasks</div>
+      <div class="ap">📅 Schedule</div>
+      <div class="ap">🔍 Research</div>
+      <div class="ap">🌤 Weather</div>
+    </div>
+    <div class="tb-right"><button class="tb-btn" onclick="newChat()">New Session</button></div>
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="welcome" id="welcome">
+      <div class="wlogo">SmartAssist AI</div>
+      <div class="wsub">Your intelligent multi-agent productivity system. Manage tasks, schedules, research anything, and more — all in one place.</div>
+      <div class="agents-row">
+        <div class="agent-card"><div class="agent-card-ico">🤖</div><div class="agent-card-name">Primary</div><div class="agent-card-role">Coordinator</div></div>
+        <div class="agent-card"><div class="agent-card-ico">📋</div><div class="agent-card-name">Task</div><div class="agent-card-role">Manager</div></div>
+        <div class="agent-card"><div class="agent-card-ico">📅</div><div class="agent-card-name">Schedule</div><div class="agent-card-role">Calendar</div></div>
+        <div class="agent-card"><div class="agent-card-ico">🔍</div><div class="agent-card-name">Research</div><div class="agent-card-role">Search</div></div>
+        <div class="agent-card"><div class="agent-card-ico">🌤</div><div class="agent-card-name">Weather</div><div class="agent-card-role">Live Data</div></div>
+      </div>
+      <div class="wcards">
+        <div class="wcard" onclick="ask('Add a task: Complete the AI project with high priority')">
+          <div class="wcard-ico">📋</div>
+          <div class="wcard-t">Add a new task</div>
+          <div class="wcard-s">Task Agent · Database</div>
+        </div>
+        <div class="wcard" onclick="ask('Schedule a team meeting on 2026-04-10 at 10:00 AM')">
+          <div class="wcard-ico">📅</div>
+          <div class="wcard-t">Schedule a meeting</div>
+          <div class="wcard-s">Schedule Agent · Calendar</div>
+        </div>
+        <div class="wcard" onclick="ask('Search for information about generative AI in 2026')">
+          <div class="wcard-ico">🔍</div>
+          <div class="wcard-t">Research a topic</div>
+          <div class="wcard-s">Research Agent · AI</div>
+        </div>
+        <div class="wcard" onclick="ask('Get current weather for Delhi')">
+          <div class="wcard-ico">🌤</div>
+          <div class="wcard-t">Check weather</div>
+          <div class="wcard-s">Weather Agent · Live</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-wrap">
+      <div class="input-top">
+        <textarea id="inp" rows="1" placeholder="Ask SmartAssist anything — add tasks, schedule meetings, research topics..." oninput="autoResize(this)"></textarea>
+        <button class="snd" id="sndBtn" onclick="send()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="input-bottom">
+        <button class="tool-btn" onclick="ask('Show me all my tasks')">📋 Tasks</button>
+        <button class="tool-btn" onclick="ask('Show me my schedule')">📅 Schedule</button>
+        <button class="tool-btn" onclick="ask('Show my notes')">📝 Notes</button>
+        <button class="tool-btn" onclick="ask('Get weather for Mumbai')">🌤 Weather</button>
+        <button class="tool-btn" onclick="ask('Research: ')">🔍 Research</button>
+        <div class="inp-hint">Enter to send · Shift+Enter new line</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const msgsEl=document.getElementById('msgs');
+const inp=document.getElementById('inp');
+const sndBtn=document.getElementById('sndBtn');
+let history=[],isLoading=false,lastMsg='';
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,160)+'px';}
+function rmWelcome(){const w=document.getElementById('welcome');if(w)w.remove();}
+
+function detectAgent(text){
+  const t=text.toLowerCase();
+  if(t.includes('task'))return{name:'Task Agent',color:'var(--accent4)'};
+  if(t.includes('schedul')||t.includes('meeting')||t.includes('calendar'))return{name:'Schedule Agent',color:'var(--accent2)'};
+  if(t.includes('note'))return{name:'Notes Agent',color:'var(--accent3)'};
+  if(t.includes('weather'))return{name:'Weather Agent',color:'#60a5fa'};
+  if(t.includes('search')||t.includes('research')||t.includes('find'))return{name:'Research Agent',color:'#a78bfa'};
+  return{name:'Primary Agent',color:'var(--accent)'};
+}
+
+function formatMsg(text){
+  const parts=[];
+  const codeRegex=/```(\w*)\n?([\s\S]*?)```/g;
+  let last=0,match;
+  while((match=codeRegex.exec(text))!==null){
+    if(match.index>last)parts.push({type:'text',content:text.slice(last,match.index)});
+    parts.push({type:'code',lang:match[1]||'code',content:match[2]});
+    last=match.index+match[0].length;
+  }
+  if(last<text.length)parts.push({type:'text',content:text.slice(last)});
+  let html='';
+  for(const part of parts){
+    if(part.type==='code'){
+      const id='cb'+Math.random().toString(36).slice(2,8);
+      const escaped=part.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      html+=`<div class="code-block"><div class="code-header"><span class="code-lang">${part.lang}</span><button class="code-copy" id="${id}" onclick="cpCode('${id}',this.dataset.code)" data-code="${escaped}">Copy</button></div><div class="code-content">${escaped}</div></div>`;
+    } else {
+      let t=part.content;
+      t=t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+      t=t.replace(/\n/g,'<br>');
+      html+=t;
+    }
+  }
+  return html;
+}
+
+function cpCode(id,btn){
+  const el=document.getElementById(id);
+  const code=el?el.nextElementSibling.textContent:'';
+  navigator.clipboard.writeText(code).then(()=>{
+    const b=document.getElementById(id);
+    if(b){b.textContent='Copied!';b.style.color='#28ca41';setTimeout(()=>{b.textContent='Copy';b.style.color='';},2000);}
+  });
+}
+
+function cpTxt(btn,id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const o=btn.textContent;btn.textContent='✅ Copied!';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent=o;btn.classList.remove('ok');},2000);
+  });
+}
+
+function addMsg(text,isUser,agentInfo){
+  rmWelcome();
+  const id='msg'+Math.random().toString(36).slice(2,8);
+  const row=document.createElement('div');
+  row.className='msg-row'+(isUser?' usr':'');
+  const agent=agentInfo||detectAgent(text);
+  const display=isUser?`<span>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`:formatMsg(text);
+  row.innerHTML=`
+    <div class="av ${isUser?'av-u':'av-ai'}">${isUser?'👤':'🤖'}</div>
+    <div class="msg-body">
+      <div class="msg-name">${isUser?'You':'SmartAssist AI'}${!isUser?`<span class="agent-tag" style="background:rgba(94,234,212,.1);color:${agent.color}">${agent.name}</span>`:''}</div>
+      <div class="bubble ${isUser?'ubub':''}" id="${id}">${display}</div>
+      <div class="msg-acts">
+        <button class="act" onclick="cpTxt(this,'${id}')">📋 Copy</button>
+        ${!isUser?'<button class="act" onclick="regen()">↺ Retry</button>':''}
+      </div>
+    </div>`;
+  msgsEl.appendChild(row);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+function addTyp(){
+  rmWelcome();
+  const d=document.createElement('div');d.id='typ';d.className='msg-row';
+  d.innerHTML=`<div class="av av-ai">🤖</div><div class="msg-body"><div class="msg-name">SmartAssist AI <span class="agent-tag">Processing...</span></div><div class="typ"><span></span><span></span><span></span></div></div>`;
+  msgsEl.appendChild(d);msgsEl.scrollTop=msgsEl.scrollHeight;return d;
+}
+
+function regen(){if(lastMsg&&!isLoading){inp.value=lastMsg;send();}}
+function ask(t){inp.value=t;if(!t.endsWith(': ')){send();}else{inp.focus();}}
+
+function newChat(){
+  history=[];msgsEl.innerHTML='';
+  const w=document.createElement('div');w.id='welcome';w.className='welcome';
+  w.innerHTML=`<div class="wlogo">SmartAssist AI</div><div class="wsub">Your intelligent multi-agent productivity system.</div><div class="wcards"><div class="wcard" onclick="ask('Add a task: Complete AI project with high priority')"><div class="wcard-ico">📋</div><div class="wcard-t">Add a task</div><div class="wcard-s">Task Agent</div></div><div class="wcard" onclick="ask('Schedule a meeting on 2026-04-10 at 10:00 AM')"><div class="wcard-ico">📅</div><div class="wcard-t">Schedule meeting</div><div class="wcard-s">Schedule Agent</div></div><div class="wcard" onclick="ask('Research generative AI trends 2026')"><div class="wcard-ico">🔍</div><div class="wcard-t">Research topic</div><div class="wcard-s">Research Agent</div></div><div class="wcard" onclick="ask('Get weather for Delhi')"><div class="wcard-ico">🌤</div><div class="wcard-t">Check weather</div><div class="wcard-s">Weather Agent</div></div></div>`;
+  msgsEl.appendChild(w);
+  inp.value='';inp.style.height='auto';
+}
+
+async function send(){
+  const text=inp.value.trim();
+  if(!text||isLoading)return;
+  isLoading=true;inp.disabled=true;sndBtn.disabled=true;
+  lastMsg=text;inp.value='';inp.style.height='auto';
+  addMsg(text,true);
+  const agent=detectAgent(text);
+  const t=addTyp();
+  try{
+    const r=await fetch('/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history.concat([{role:'user',content:text}])})
+    });
+    const d=await r.json();
+    t.remove();
+    history.push({role:'user',content:text});
+    history.push({role:'assistant',content:d.reply});
+    addMsg(d.reply,false,agent);
+  }catch(e){
+    t.remove();
+    addMsg('Something went wrong. Please try again!',false);
+  }
+  isLoading=false;inp.disabled=false;sndBtn.disabled=false;inp.focus();
+}
+
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+</script>
+</body>
+</html>
