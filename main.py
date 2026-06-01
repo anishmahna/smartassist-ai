@@ -11,7 +11,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 DB = "/tmp/smartassist.db"
 
 
-# ---------------- DATABASE INIT ---------------- #
+# ---------------- DB INIT ---------------- #
 
 def init_db():
     conn = sqlite3.connect(DB)
@@ -49,18 +49,16 @@ def init_db():
 init_db()
 
 
-# ---------------- TASKS ---------------- #
+# ---------------- TOOLS ---------------- #
 
 def add_task(title, description="", priority="medium"):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute(
-        "INSERT INTO tasks (title,description,priority) VALUES (?,?,?)",
-        (title, description, priority)
-    )
+    c.execute("INSERT INTO tasks (title,description,priority) VALUES (?,?,?)",
+              (title, description, priority))
     conn.commit()
     conn.close()
-    return f"Task '{title}' added successfully!"
+    return f"Task '{title}' added successfully."
 
 
 def get_tasks():
@@ -75,8 +73,8 @@ def get_tasks():
 
     result = "Your Tasks:\n"
     for t in tasks:
-        status_emoji = "✅" if t[2] == "completed" else "⏳"
-        result += f"{status_emoji} [{t[0]}] {t[1]} ({t[3]})\n"
+        emoji = "✅" if t[2] == "completed" else "⏳"
+        result += f"{emoji} [{t[0]}] {t[1]} ({t[3]})\n"
     return result
 
 
@@ -86,40 +84,34 @@ def complete_task(task_id):
     c.execute("UPDATE tasks SET status='completed' WHERE id=?", (task_id,))
     conn.commit()
     conn.close()
-    return f"Task {task_id} marked completed!"
+    return f"Task {task_id} completed."
 
-
-# ---------------- SCHEDULE ---------------- #
 
 def add_schedule(title, date, time, description=""):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute(
-        "INSERT INTO schedules (title,date,time,description) VALUES (?,?,?,?)",
-        (title, date, time, description)
-    )
+    c.execute("INSERT INTO schedules (title,date,time,description) VALUES (?,?,?,?)",
+              (title, date, time, description))
     conn.commit()
     conn.close()
-    return f"Schedule '{title}' added!"
+    return f"Schedule '{title}' added."
 
 
 def get_schedules():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     c.execute("SELECT id,title,date,time FROM schedules ORDER BY date,time")
-    schedules = c.fetchall()
+    data = c.fetchall()
     conn.close()
 
-    if not schedules:
+    if not data:
         return "No schedules found."
 
     result = "Your Schedule:\n"
-    for s in schedules:
-        result += f"📅 [{s[0]}] {s[1]} - {s[2]} at {s[3]}\n"
+    for s in data:
+        result += f"📅 [{s[0]}] {s[1]} - {s[2]} {s[3]}\n"
     return result
 
-
-# ---------------- NOTES ---------------- #
 
 def add_note(title, content):
     conn = sqlite3.connect(DB)
@@ -127,7 +119,7 @@ def add_note(title, content):
     c.execute("INSERT INTO notes (title,content) VALUES (?,?)", (title, content))
     conn.commit()
     conn.close()
-    return f"Note '{title}' saved!"
+    return f"Note '{title}' saved."
 
 
 def get_notes():
@@ -146,8 +138,6 @@ def get_notes():
     return result
 
 
-# ---------------- WEATHER ---------------- #
-
 def get_weather(city):
     try:
         geo = requests.get(
@@ -156,7 +146,7 @@ def get_weather(city):
         ).json()
 
         if not geo.get("results"):
-            return f"City {city} not found"
+            return f"City {city} not found."
 
         r = geo["results"][0]
 
@@ -169,47 +159,37 @@ def get_weather(city):
 
         cur = w["current"]
 
-        return (
-            f"Weather in {city}: "
-            f"{cur['temperature_2m']}°C, "
-            f"Humidity {cur['relative_humidity_2m']}%, "
-            f"Wind {cur['wind_speed_10m']} km/h"
-        )
+        return f"Weather in {city}: {cur['temperature_2m']}°C, Humidity {cur['relative_humidity_2m']}%, Wind {cur['wind_speed_10m']} km/h"
 
     except Exception as e:
         return f"Weather error: {str(e)}"
 
 
-# ---------------- GEMINI SEARCH ---------------- #
-
 def search_info(query):
+    if not GEMINI_API_KEY:
+        return "Missing API key"
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+    payload = {
+        "contents": [{
+            "role": "user",
+            "parts": [{"text": f"Explain in detail: {query}"}]
+        }]
+    }
+
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-
-        payload = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": f"Research: {query}"}]
-            }],
-            "generationConfig": {
-                "temperature": 0.3,
-                "maxOutputTokens": 1024
-            }
-        }
-
         r = requests.post(url, json=payload, timeout=30)
-        response = r.json()
+        data = r.json()
 
-        if "candidates" not in response:
-            return "No response from AI."
+        if "candidates" not in data:
+            return str(data)
 
-        return response["candidates"][0]["content"]["parts"][0]["text"]
+        return data["candidates"][0]["content"]["parts"][0]["text"]
 
     except Exception as e:
         return f"Search error: {str(e)}"
 
-
-# ---------------- TOOLS MAP ---------------- #
 
 TOOLS = {
     "add_task": add_task,
@@ -224,17 +204,16 @@ TOOLS = {
 }
 
 
-# ---------------- GEMINI CALL ---------------- #
+# ---------------- GEMINI CORE FIX ---------------- #
 
 def call_gemini(messages, system_text):
     if not GEMINI_API_KEY:
-        return "ERROR: GEMINI_API_KEY not set"
+        return "ERROR: Missing API key"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     contents = [
-        {"role": "user", "parts": [{"text": system_text}]},
-        {"role": "model", "parts": [{"text": "OK"}]}
+        {"role": "user", "parts": [{"text": system_text}]}
     ]
 
     for m in messages:
@@ -244,80 +223,72 @@ def call_gemini(messages, system_text):
     payload = {
         "contents": contents,
         "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 2048
+            "temperature": 0.3,
+            "maxOutputTokens": 1024
         }
     }
 
     try:
-        r = requests.post(url, json=payload, timeout=60)
-        response = r.json()
+        r = requests.post(url, json=payload, timeout=30)
+        data = r.json()
 
-        if "candidates" not in response:
-            return "AI error: No response"
+        print("Gemini response:", data)
 
-        return response["candidates"][0]["content"]["parts"][0]["text"]
+        if "candidates" not in data:
+            return f"AI error: {data}"
+
+        return data["candidates"][0]["content"]["parts"][0]["text"]
 
     except Exception as e:
         return f"AI error: {str(e)}"
 
 
-# ---------------- SYSTEM PROMPT ---------------- #
+# ---------------- SYSTEM ---------------- #
 
 SYSTEM = """
-You are SmartAssist AI built by Anish Mahna.
+You are SmartAssist AI.
 
-If user wants a tool, respond ONLY:
+If tool needed respond:
 TOOL_CALL: {"tool":"tool_name","params":{}}
-
-Otherwise reply normally.
 """
 
 
 # ---------------- ROUTES ---------------- #
 
 @app.route('/')
-def index():
+def home():
     return send_from_directory('static', 'index.html')
 
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    try:
-        data = request.json
-        messages = data.get('messages', [])
+    data = request.json
+    messages = data.get("messages", [])
 
-        reply = call_gemini(messages, SYSTEM)
+    reply = call_gemini(messages, SYSTEM)
 
-        if "TOOL_CALL:" in reply:
-            try:
-                json_str = reply.split("TOOL_CALL:")[1]
-                match = re.search(r'\{.*\}', json_str, re.DOTALL)
+    if "TOOL_CALL:" in reply:
+        try:
+            json_part = reply.split("TOOL_CALL:")[1]
+            match = re.search(r'\{.*\}', json_part, re.DOTALL)
 
-                if match:
-                    tool_call = json.loads(match.group())
-                    tool_name = tool_call["tool"]
-                    params = tool_call.get("params", {})
+            if match:
+                tool_call = json.loads(match.group())
+                tool = tool_call["tool"]
+                params = tool_call.get("params", {})
 
-                    if tool_name in TOOLS:
-                        result = TOOLS[tool_name](**params)
+                if tool in TOOLS:
+                    result = TOOLS[tool](**params)
 
-                        messages.append({"role": "assistant", "content": reply})
-                        messages.append({
-                            "role": "user",
-                            "content": f"Tool result: {result}. Now respond naturally."
-                        })
+                    messages.append({"role": "assistant", "content": reply})
+                    messages.append({"role": "user", "content": f"Result: {result}"})
 
-                        final_reply = call_gemini(messages, SYSTEM)
-                        return jsonify({"reply": final_reply})
+                    return jsonify({"reply": call_gemini(messages, SYSTEM)})
 
-            except Exception as e:
-                print("Tool error:", e)
+        except Exception as e:
+            print("Tool error:", e)
 
-        return jsonify({"reply": reply})
-
-    except Exception as e:
-        return jsonify({"reply": "Server error"}), 500
+    return jsonify({"reply": reply})
 
 
 @app.route('/tasks')
@@ -325,17 +296,17 @@ def tasks():
     return jsonify({"result": get_tasks()})
 
 
-@app.route('/schedules')
-def schedules():
-    return jsonify({"result": get_schedules()})
-
-
 @app.route('/notes')
 def notes():
     return jsonify({"result": get_notes()})
 
 
+@app.route('/schedules')
+def schedules():
+    return jsonify({"result": get_schedules()})
+
+
 # ---------------- RUN ---------------- #
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
