@@ -124,8 +124,14 @@ def search_info(query):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {"contents":[{"role":"user","parts":[{"text":f"Research and provide comprehensive information about: {query}"}]}],
                    "generationConfig":{"temperature":0.3,"maxOutputTokens":1024}}
-        r = requests.post(url,json=payload,timeout=30)
-        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+        r = requests.post(url, json=payload, timeout=30)
+        response = r.json()
+
+        if "candidates" not in response:
+            return "Sorry, I couldn't generate a response right now."
+
+        return response["candidates"][0]["content"]["parts"][0]["text"]
+
     except Exception as e:
         return f"Search error: {str(e)}"
 
