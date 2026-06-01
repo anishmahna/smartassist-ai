@@ -158,7 +158,14 @@ def call_gemini(messages, system_text):
         contents.append({"role":role,"parts":[{"text":m["content"]}]})
     payload = {"contents":contents,"generationConfig":{"temperature":0.2,"maxOutputTokens":4096}}
     r = requests.post(url,json=payload,timeout=60)
-    return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+response = r.json()
+
+if "candidates" not in response:
+    print("Gemini response:", response)
+    return "Sorry, I couldn't generate a response right now."
+
+return response["candidates"][0]["content"]["parts"][0]["text"]
 
 SYSTEM = """You are SmartAssist AI, an intelligent multi-agent productivity assistant built by Anish Mahna.
 
